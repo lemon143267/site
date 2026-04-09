@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lemons tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fafafa; --bg2: #f0f0eb; --bg3: #ffffff;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #9e9d99;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.25);
+    --accent: #FAC775; --accent-dark: #412402; --accent-border: #EF9F27;
+    --radius: 10px; --radius-sm: 7px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2c2c2a;
+      --text: #f0ede6; --text2: #b4b2a9; --text3: #6b6a66;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+    }
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--bg3); border-right: 0.5px solid var(--border);
+    display: flex; flex-direction: column; padding: 20px 0 16px; height: 100vh;
+  }
+  .sidebar-logo { font-size: 15px; font-weight: 600; color: var(--text); padding: 0 18px 20px; letter-spacing: -0.3px; }
+  .sidebar-logo span { color: var(--accent-border); }
+  .nav-section { font-size: 11px; font-weight: 600; color: var(--text3); padding: 0 18px 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; font-size: 14px; font-weight: 400; color: var(--text2);
+    background: none; border: none; cursor: pointer; width: 100%; text-align: left;
+    transition: background 0.1s, color 0.1s; border-radius: 0;
+  }
+  .nav-btn:hover { background: var(--bg2); color: var(--text); }
+  .nav-btn.active { background: var(--bg2); color: var(--text); font-weight: 500; }
+  .nav-icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-btn.active .nav-icon { opacity: 1; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .page { display: none; flex: 1; flex-direction: column; overflow: auto; }
+  .page.active { display: flex; }
+
+  /* TOPBAR */
+  .topbar { padding: 16px 32px 0; border-bottom: 0.5px solid var(--border); }
+  .topbar-title { font-size: 20px; font-weight: 500; color: var(--text); padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .topbar-url { font-size: 11px; color: var(--text3); background: var(--bg2); padding: 3px 8px; border-radius: 5px; font-family: monospace; }
+
+  /* HOME PAGE */
+  .home-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 40px 20px; overflow: hidden; }
+  .home-title { font-size: 56px; font-weight: 600; color: var(--text); letter-spacing: -2px; line-height: 1; }
+  .home-title em { color: var(--accent-border); font-style: normal; }
+  .home-img { width: 240px; height: 140px; border: 1.5px dashed var(--border2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 13px; cursor: pointer; transition: border-color 0.2s; position: relative; overflow: hidden; }
+  .home-img:hover { border-color: var(--accent-border); }
+  .home-img img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+  .duck-lane { width: 100%; max-width: 700px; height: 70px; position: relative; overflow: hidden; }
+  .duck { position: absolute; bottom: 0; font-size: 30px; animation: duck-walk linear infinite; pointer-events: none; user-select: none; }
+  @keyframes duck-walk { from { left: -60px; } to { left: calc(100% + 60px); } }
+  .home-tagline { font-size: 14px; color: var(--text3); }
+
+  /* CONTENT AREA */
+  .content { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; max-width: 860px; }
+
+  /* FORM ELEMENTS */
+  label { font-size: 13px; color: var(--text2); display: block; margin-bottom: 6px; font-weight: 500; }
+  input[type="text"], input[type="number"], input[type="url"], textarea {
+    width: 100%; padding: 10px 13px; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--bg3); color: var(--text);
+    font-size: 14px; font-family: inherit; line-height: 1.5;
+    transition: border-color 0.15s; resize: vertical;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent-border); box-shadow: 0 0 0 3px rgba(239,159,39,0.15); }
+  textarea { min-height: 220px; }
+
+  .btn {
+    padding: 9px 20px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: var(--bg3); color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit;
+    transition: background 0.1s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent-border); color: var(--accent-dark); font-weight: 500; }
+  .btn-primary:hover { background: var(--accent-border); }
+  .btn-sm { padding: 6px 13px; font-size: 12px; }
+
+  .status { font-size: 13px; color: var(--text2); padding: 8px 12px; background: var(--bg2); border-radius: var(--radius-sm); display: none; }
+  .status.visible { display: block; }
+  .status.ok { color: #3B6D11; background: #EAF3DE; }
+  .status.err { color: #A32D2D; background: #FCEBEB; }
+
+  /* URL PAGE */
+  .url-row { display: flex; align-items: center; gap: 0; }
+  .url-prefix { padding: 10px 12px; background: var(--bg2); border: 0.5px solid var(--border2); border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm); font-size: 13px; color: var(--text3); white-space: nowrap; font-family: monospace; }
+  .url-row input { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+  .url-links-list { display: flex; flex-direction: column; gap: 8px; }
+  .url-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+  .url-item-slug { font-weight: 600; color: var(--text); font-family: monospace; min-width: 120px; }
+  .url-item-target { color: var(--text3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .url-item-visits { color: var(--text3); white-space: nowrap; }
+
+  /* LOG TABLE */
+  .log-wrap { border: 0.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 9px 12px; background: var(--bg2); color: var(--text2); font-weight: 600; border-bottom: 0.5px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 9px 12px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .empty-row td { color: var(--text3); text-align: center; padding: 20px; }
+
+  /* RANDOM PAGE */
+  .range-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .range-row span { font-size: 14px; color: var(--text2); }
+  .range-row input[type="number"] { width: 110px; }
+  .result-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(20,20,18,0.92); align-items: center; justify-content: center; flex-direction: column; gap: 32px;
+  }
+  .result-overlay.show { display: flex; }
+  .result-number { font-size: 130px; font-weight: 600; color: var(--accent); line-height: 1; letter-spacing: -4px; animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .result-caption { color: rgba(255,255,255,0.4); font-size: 14px; }
+  .result-close { padding: 10px 32px; border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: transparent; color: rgba(255,255,255,0.5); font-size: 14px; cursor: pointer; transition: all 0.15s; }
+  .result-close:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    .sidebar { width: 60px; }
+    .sidebar-logo, .nav-btn span, .nav-section { display: none; }
+    .nav-btn { justify-content: center; padding: 12px; }
+    .nav-icon { width: 20px; height: 20px; }
+    .content { padding: 20px 16px; }
+    .topbar { padding: 12px 16px 0; }
+    .home-title { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">🍋 <span>lemons</span>.tool</div>
+  <div class="nav-section">Инструменты</div>
+  <button class="nav-btn active" data-page="home">
+    <svg class="nav-icon" viewBox="0 0 18 18" fill="none"><path d="M2 7.5l7-5 7 5V15a1 1 0 01-1 1H3a1 1 0 01-1-1V7.5z" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="6" y="10" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Главная</span>
+  </button>
+  <button class="nav-btn" data-page="notepad">
+    <svg class="nav-icon" viewBox="0 0 18 18" fill="none"><rect x="3" y="2" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><line x1="6" y1="6" x2="12" y2="6" stroke="currentColor" stroke-width="1.3"/><line x1="6" y1="9" x2="12" y2="9" stroke="currentColor" stroke-width="1.3"/><line x1="6" y1="12" x2="10" y2="12" stroke="currentColor" stroke-width="1.3"/></svg>
+    <span>Блокнот</span>
+  </button>
+  <button class="nav-btn" data-page="urls">
+    <svg class="nav-icon" viewBox="0 0 18 18" fill="none"><path d="M7.5 10.5a4 4 0 005.66 0l1.5-1.5a4 4 0 00-5.66-5.66l-.86.86" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.5 7.5a4 4 0 00-5.66 0L3.34 9a4 4 0 005.66 5.66l.86-.86" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Ссылки</span>
+  </button>
+  <button class="nav-btn" data-page="random">
+    <svg class="nav-icon" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.3"/><circle cx="6" cy="6" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="6" r="1.2" fill="currentColor"/><circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/></svg>
+    <span>Рандом</span>
+  </button>
+</nav>
+
+<main class="main">
+
+  <!-- HOME -->
+  <section class="page active" id="page-home">
+    <div class="home-wrap">
+      <div class="home-title">lemons <em>tool</em></div>
+      <div class="home-img" id="img-holder" onclick="document.getElementById('img-upload').click()">
+        <span id="img-placeholder">+ добавить изображение</span>
+        <input type="file" id="img-upload" accept="image/*" style="display:none" onchange="loadImg(this)">
+      </div>
+      <div class="duck-lane" id="duck-lane"></div>
+      <p class="home-tagline">швейцарский нож для lolkekdomain.pp.ua</p>
+    </div>
+  </section>
+
+  <!-- NOTEPAD -->
+  <section class="page" id="page-notepad">
+    <div class="topbar">
+      <div class="topbar-title">Блокнот <span class="topbar-url">lolkekdomain.pp.ua/newbook</span></div>
+    </div>
+    <div class="content">
+      <div>
+        <label for="note-nick">Ник (оставь пустым — будет «Аноним»)</label>
+        <input type="text" id="note-nick" placeholder="твой_ник" maxlength="50">
+      </div>
+      <div>
+        <label for="note-text">Текст (до 100 000 строк)</label>
+        <textarea id="note-text" placeholder="Вставляй сюда что угодно — код, текст, список…"></textarea>
+        <div style="font-size:12px;color:var(--text3);margin-top:5px;text-align:right" id="line-count">0 строк</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveNote()">💾 Сохранить</button>
+        <button class="btn" onclick="clearNote()">Очистить</button>
+        <button class="btn" onclick="copyNote()">Копировать</button>
+      </div>
+      <div class="status" id="note-status"></div>
+      <div>
+        <label>Сохранённые записки</label>
+        <div id="notes-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- URL SHORTENER -->
+  <section class="page" id="page-urls">
+    <div class="topbar">
+      <div class="topbar-title">Сокращатель ссылок <span class="topbar-url">lolkekdomain.pp.ua/url</span></div>
+    </div>
+    <div class="content">
+      <div>
+        <label for="url-target">Исходная длинная ссылка</label>
+        <input type="url" id="url-target" placeholder="https://очень-длинная-ссылка.com/страница?param=value">
+      </div>
+      <div>
+        <label>Короткий путь</label>
+        <div class="url-row">
+          <span class="url-prefix">lolkekdomain.pp.ua/url/</span>
+          <input type="text" id="url-slug" placeholder="мой-путь" style="border-radius:0 7px 7px 0">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveUrl()" style="width:fit-content">Сохранить ссылку</button>
+      <div class="status" id="url-status"></div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <label style="margin:0">Созданные ссылки</label>
+          <button class="btn btn-sm" onclick="exportLogs()">⬇ Скачать CSV-логи</button>
+        </div>
+        <div id="url-links-list"></div>
+      </div>
+
+      <div>
+        <label>Лог переходов</label>
+        <div class="log-wrap">
+          <table>
+            <thead><tr><th>Короткий путь</th><th>IP / агент</th><th>Время</th></tr></thead>
+            <tbody id="log-body">
+              <tr class="empty-row"><td colspan="3">Переходов пока нет</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RANDOM -->
+  <section class="page" id="page-random">
+    <div class="topbar">
+      <div class="topbar-title">Рандомайзер <span class="topbar-url">lolkekdomain.pp.ua/random</span></div>
+    </div>
+    <div class="content">
+      <div>
+        <label>Диапазон чисел</label>
+        <div class="range-row">
+          <span>от</span>
+          <input type="number" id="r-min" value="1">
+          <span>до</span>
+          <input type="number" id="r-max" value="100">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doRandom()" style="width:fit-content;font-size:16px;padding:12px 32px">🎲 Рандом!</button>
+      <div id="random-history" style="display:flex;flex-direction:column;gap:6px">
+        <label>История</label>
+        <div id="r-history-list" style="color:var(--text3);font-size:14px">Ещё ничего не кидали</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Random result overlay -->
+<div class="result-overlay" id="overlay" onclick="closeOverlay()">
+  <div class="result-number" id="rnum">42</div>
+  <div class="result-caption" id="rcap">от 1 до 100</div>
+  <button class="result-close" onclick="closeOverlay()">закрыть</button>
+</div>
+
+<script>
+// ── NAVIGATION ──
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    btn.classList.add('active');
+    history.pushState(null, '', id === 'home' ? '/' : '/' + (id === 'notepad' ? 'newbook' : id === 'urls' ? 'url' : 'random'));
+  });
+});
+
+// ── DUCKS ──
+const lane = document.getElementById('duck-lane');
+const DUCKS = ['🐥','🐤','🐣','🐦','🦆'];
+function spawnDuck() {
+  const el = document.createElement('span');
+  el.className = 'duck';
+  const size = 24 + Math.random() * 14;
+  const dur = 4 + Math.random() * 5;
+  el.style.cssText = `font-size:${size}px;animation-duration:${dur}s;bottom:${Math.random()*16}px;`;
+  el.textContent = DUCKS[Math.floor(Math.random() * DUCKS.length)];
+  lane.appendChild(el);
+  setTimeout(() => el.remove(), dur * 1000 + 500);
+}
+setInterval(spawnDuck, 900);
+spawnDuck(); spawnDuck(); spawnDuck();
+
+// ── IMAGE ──
+function loadImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const holder = document.getElementById('img-holder');
+  holder.innerHTML = `<img src="${url}" alt="cover"><input type="file" id="img-upload" accept="image/*" style="display:none" onchange="loadImg(this)">`;
+  holder.onclick = () => document.getElementById('img-upload').click();
+}
+
+// ── NOTEPAD ──
+const notes = JSON.parse(localStorage.getItem('lmt_notes') || '[]');
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  if (!notes.length) { list.innerHTML = '<div style="color:var(--text3);font-size:13px">Записок пока нет</div>'; return; }
+  list.innerHTML = notes.map((n, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg3);border:0.5px solid var(--border);border-radius:7px;font-size:13px">
+      <div style="flex:1">
+        <strong>${n.nick}</strong>
+        <span style="color:var(--text3);margin-left:8px">${new Date(n.ts).toLocaleString('uk-UA')}</span>
+        <div style="color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px">${n.text.slice(0,120)}${n.text.length>120?'…':''}</div>
+      </div>
+      <button class="btn btn-sm" onclick="loadNote(${i})">Загрузить</button>
+      <button class="btn btn-sm" onclick="deleteNote(${i})" style="color:#A32D2D">✕</button>
+    </div>`).join('');
+}
+function saveNote() {
+  const nick = document.getElementById('note-nick').value.trim() || 'Аноним';
+  const text = document.getElementById('note-text').value;
+  if (!text.trim()) { showStatus('note-status', 'Текст пустой!', 'err'); return; }
+  const lines = text.split('\n').length;
+  if (lines > 100000) { showStatus('note-status', `Слишком много строк: ${lines.toLocaleString()}. Максимум 100 000.`, 'err'); return; }
+  notes.unshift({ nick, text, ts: Date.now() });
+  localStorage.setItem('lmt_notes', JSON.stringify(notes.slice(0, 50)));
+  renderNotes();
+  showStatus('note-status', `Сохранено от ${nick} · ${lines.toLocaleString()} строк`, 'ok');
+}
+function clearNote() {
+  document.getElementById('note-text').value = '';
+  document.getElementById('note-nick').value = '';
+  document.getElementById('note-status').className = 'status';
+  document.getElementById('line-count').textContent = '0 строк';
+}
+function copyNote() {
+  const text = document.getElementById('note-text').value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => showStatus('note-status', 'Скопировано!', 'ok'));
+}
+function loadNote(i) {
+  document.getElementById('note-text').value = notes[i].text;
+  document.getElementById('note-nick').value = notes[i].nick;
+  updateLineCount();
+}
+function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('lmt_notes', JSON.stringify(notes)); renderNotes(); }
+document.getElementById('note-text').addEventListener('input', updateLineCount);
+function updateLineCount() {
+  const lines = document.getElementById('note-text').value.split('\n').length;
+  document.getElementById('line-count').textContent = lines.toLocaleString() + ' строк';
+}
+renderNotes();
+
+// ── URL SHORTENER ──
+const urlMap = JSON.parse(localStorage.getItem('lmt_urls') || '{}');
+const urlLogs = JSON.parse(localStorage.getItem('lmt_logs') || '[]');
+function renderUrls() {
+  const list = document.getElementById('url-links-list');
+  const slugs = Object.keys(urlMap);
+  if (!slugs.length) { list.innerHTML = '<div style="color:var(--text3);font-size:13px">Ссылок пока нет</div>'; return; }
+  list.innerHTML = slugs.map(slug => {
+    const visits = urlLogs.filter(l => l.slug === slug).length;
+    return `<div class="url-item">
+      <span class="url-item-slug">/url/${slug}</span>
+      <span class="url-item-target">${urlMap[slug]}</span>
+      <span class="url-item-visits">${visits} переход${visits===1?'':'ов'}</span>
+      <button class="btn btn-sm" onclick="copyShort('${slug}')">Копировать</button>
+      <button class="btn btn-sm" onclick="deleteUrl('${slug}')" style="color:#A32D2D">✕</button>
+    </div>`;
+  }).join('');
+}
+function renderLogs() {
+  const tb = document.getElementById('log-body');
+  if (!urlLogs.length) { tb.innerHTML = '<tr class="empty-row"><td colspan="3">Переходов пока нет</td></tr>'; return; }
+  tb.innerHTML = urlLogs.slice(-50).reverse().map(l =>
+    `<tr><td>/url/${l.slug}</td><td>${l.ip}</td><td>${new Date(l.ts).toLocaleString('uk-UA')}</td></tr>`
+  ).join('');
+}
+function saveUrl() {
+  const target = document.getElementById('url-target').value.trim();
+  const slug = document.getElementById('url-slug').value.trim().replace(/[^a-zA-Z0-9\-_а-яА-Яіє]/g, '');
+  if (!target) { showStatus('url-status', 'Введи ссылку!', 'err'); return; }
+  if (!slug) { showStatus('url-status', 'Введи короткий путь!', 'err'); return; }
+  urlMap[slug] = target;
+  localStorage.setItem('lmt_urls', JSON.stringify(urlMap));
+  renderUrls();
+  showStatus('url-status', `Готово: lolkekdomain.pp.ua/url/${slug}`, 'ok');
+  document.getElementById('url-target').value = '';
+  document.getElementById('url-slug').value = '';
+}
+function deleteUrl(slug) { delete urlMap[slug]; localStorage.setItem('lmt_urls', JSON.stringify(urlMap)); renderUrls(); }
+function copyShort(slug) { navigator.clipboard.writeText(`https://lolkekdomain.pp.ua/url/${slug}`); }
+function exportLogs() {
+  if (!urlLogs.length) { alert('Логов нет'); return; }
+  const csv = 'Путь,IP,Агент,Время\n' + urlLogs.map(l =>
+    `"/url/${l.slug}","${l.ip}","${l.agent}","${new Date(l.ts).toLocaleString('uk-UA')}"`).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'url-logs.csv'; a.click();
+}
+// Simulate redirect tracking
+function simulateVisit(slug) {
+  if (!urlMap[slug]) return false;
+  urlLogs.push({ slug, ip: '192.168.' + Math.floor(Math.random()*255) + '.' + Math.floor(Math.random()*255), agent: navigator.userAgent.slice(0, 40), ts: Date.now() });
+  localStorage.setItem('lmt_logs', JSON.stringify(urlLogs));
+  renderLogs(); renderUrls();
+  return urlMap[slug];
+}
+renderUrls(); renderLogs();
+
+// ── RANDOM ──
+const rHistory = [];
+function doRandom() {
+  const min = parseInt(document.getElementById('r-min').value);
+  const max = parseInt(document.getElementById('r-max').value);
+  if (isNaN(min) || isNaN(max) || min >= max) {
+    alert('Укажи правильный диапазон (от < до)'); return;
+  }
+  const n = Math.floor(Math.random() * (max - min + 1)) + min;
+  rHistory.unshift({ n, min, max, ts: Date.now() });
+  document.getElementById('rnum').textContent = n.toLocaleString();
+  document.getElementById('rcap').textContent = `от ${min.toLocaleString()} до ${max.toLocaleString()}`;
+  document.getElementById('overlay').classList.add('show');
+  renderRHistory();
+}
+function closeOverlay() { document.getElementById('overlay').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+function renderRHistory() {
+  const list = document.getElementById('r-history-list');
+  if (!rHistory.length) return;
+  list.innerHTML = rHistory.slice(0, 10).map(h =>
+    `<div style="display:flex;gap:12px;font-size:13px;padding:6px 10px;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px">
+      <strong style="font-size:15px;min-width:40px;color:var(--text)">${h.n}</strong>
+      <span style="color:var(--text3)">от ${h.min} до ${h.max}</span>
+      <span style="color:var(--text3);margin-left:auto">${new Date(h.ts).toLocaleTimeString('uk-UA')}</span>
+    </div>`).join('');
+}
+
+// ── UTILS ──
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `status visible ${type || ''}`;
+  setTimeout(() => el.className = 'status', 4000);
+}
+
+// ── ROUTER — handle /url/slug paths ──
+(function() {
+  const path = location.pathname;
+  if (path.startsWith('/url/')) {
+    const slug = path.replace('/url/', '').replace('/', '');
+    const target = simulateVisit(slug) || urlMap[slug];
+    if (target) { location.href = target; return; }
+  }
+  if (path === '/newbook') {
+    document.querySelector('[data-page="notepad"]').click();
+  } else if (path === '/url') {
+    document.querySelector('[data-page="urls"]').click();
+  } else if (path === '/random') {
+    document.querySelector('[data-page="random"]').click();
+  }
+})();
+</script>
+</body>
+</html>
